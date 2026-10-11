@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Synthesizer:
-    def __init__(self, num_tokens=1000, num_channels=128, num_queries=1):
+    def __init__(self, num_tokens=1024, num_channels=128, num_queries=1):
         self.num_tokens = num_tokens
         self.num_channels = num_channels
         self.num_queries = num_queries
@@ -23,7 +23,7 @@ class Synthesizer:
     def generate_value_matrix(self):
         V = np.random.randn(self.num_tokens, self.num_channels).astype(np.float32)
 
-        # Amplify scattered entries without a fixed channel or token pattern.
+        # bump randomly selected points
         positions = np.random.choice(V.size, max(1, V.size // 100), replace=False)
         V.flat[positions] *= 10
         return V
