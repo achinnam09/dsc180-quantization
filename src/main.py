@@ -1,5 +1,8 @@
-from src.kivi import per_channel_quantization, per_token_quantization
+from src.quantize import per_channel_quantization, per_token_quantization
 from src.synthesizer import Synthesizer
+
+RESIDUAL_LENGTH = 128
+GROUP_SIZE = 32
 
 
 synth = Synthesizer()
@@ -7,7 +10,7 @@ Q, K, V = synth.generate()
 
 quantization_method_map = {
     'channel': per_channel_quantization,
-    'per token': per_token_quantization
+    'token': per_token_quantization
 }
 
 for key_quantization_method, value_quantization_method in [
@@ -18,7 +21,7 @@ for key_quantization_method, value_quantization_method in [
 ]:
     print(f"Simulating per {key_quantization_method} quantization for K and per {value_quantization_method} for V")
 
-    K_hat = quantization_method_map[key_quantization_method](K, bits=2, G=32)
-    V_hat = quantization_method_map[value_quantization_method](K, bits=2, G=32)
+    K_hat = quantization_method_map[key_quantization_method](K, bits=2, G=GROUP_SIZE, R=RESIDUAL_LENGTH)
+    V_hat = quantization_method_map[value_quantization_method](V, bits=2, G=GROUP_SIZE, R=RESIDUAL_LENGTH)
 
     # calculate + print error metrics

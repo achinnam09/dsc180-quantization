@@ -19,16 +19,22 @@ def fake_quant(X, bits, axis):
     return dequantize(q, z, s)
 
 
-def per_channel_quantization(K, bits, G):
+def per_channel_quantization(K, bits=2, G=32, R=128):
     l, d = K.shape
-    Kq = np.empty_like(K)
-    for i in range(0, l, G):
+    Kq = K.copy()
+    quantized_rows = l - (l % R)
+    for i in range(0, quantized_rows, G):
         Kq[i:i+G] = fake_quant(K[i:i+G], bits, axis=0)
     return Kq
 
-def per_token_quantization(V, bits, G):
+def per_token_quantization(V, bits=2, G=32, R=128):
     l, d = V.shape
-    Vq = np.empty_like(V)
+    Vq = V.copy()
+    quantized_rows = max(0, l - R)
+    if quantized_rows == 0:
+        return Vq
     for c in range(0, d, G):
-        Vq[:, c:c+G] = fake_quant(V[:, c:c+G], bits, axis=1)
+        Vq[:quantized_rows, c:c+G] = fake_quant(
+            V[:quantized_rows, c:c+G], bits, axis=1
+        )
     return Vq
