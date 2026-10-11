@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Synthesizer:
-    def __init__(self, num_tokens=1024, num_channels=128, num_queries=1):
+    def __init__(self, num_tokens=1000, num_channels=128, num_queries=1):
         self.num_tokens = num_tokens
         self.num_channels = num_channels
         self.num_queries = num_queries
