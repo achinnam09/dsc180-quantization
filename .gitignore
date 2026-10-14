@@ -5,3 +5,6 @@ path/to/venv/
 # Python bytecode
 __pycache__/
 *.py[cod]
+
+# Test runner cache
+.pytest_cache/

@@ -24,7 +24,8 @@ def per_channel_quantization(K, bits=2, G=32, R=128):
     Kq = K.copy()
     quantized_rows = l - (l % R)
     for i in range(0, quantized_rows, G):
-        Kq[i:i+G] = fake_quant(K[i:i+G], bits, axis=0)
+        end = min(i + G, quantized_rows)
+        Kq[i:end] = fake_quant(K[i:end], bits, axis=0)
     return Kq
 
 def per_token_quantization(V, bits=2, G=32, R=128):
