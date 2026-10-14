@@ -32,7 +32,6 @@ class Synthesizer:
         return np.random.randn(self.num_queries, self.num_channels).astype(np.float32)
 
     def generate(self):
-        """Generate, save, and return one Q/K/V set"""
         K = self.generate_key_matrix()
         V = self.generate_value_matrix()
         Q = self.generate_query_matrix()
