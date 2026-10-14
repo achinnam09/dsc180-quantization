@@ -1,5 +1,5 @@
-from src.quantize import per_channel_quantization, per_token_quantization
-from src.synthesizer import Synthesizer
+from quantize import per_channel_quantization, per_token_quantization
+from synthesizer import Synthesizer
 
 RESIDUAL_LENGTH = 128
 GROUP_SIZE = 32
