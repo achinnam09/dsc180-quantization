@@ -21,8 +21,9 @@ def test_relative_error_handles_zeros():
 
 
 def test_attention_weights():
-    Q = np.array([[1.0], [0.0]])
-    K = np.array([[1000.0], [1001.0]])
+    # Four channels give a scale of sqrt(4) = 2.
+    Q = np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]])
+    K = np.array([[2000.0, 0.0, 0.0, 0.0], [2002.0, 0.0, 0.0, 0.0]])
 
     A = attention_weights(Q, K)
 

@@ -7,7 +7,7 @@ def relative_error(original, reconstructed, eps=1e-8):
 
 
 def attention_weights(Q, K):
-    scores = Q @ K.T
+    scores = (Q @ K.T) / np.sqrt(Q.shape[1])
     # Subtract the row maximum so exponentiation does not overflow.
     weights = np.exp(scores - scores.max(axis=1, keepdims=True))
     return weights / weights.sum(axis=1, keepdims=True)
