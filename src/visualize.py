@@ -12,7 +12,7 @@ METHOD_LABELS = {"token": "Per-token", "channel": "Per-channel"}
 PANELS = [
     ("Key cache", [
         ("key_reconstruction_error", "Key\nreconstruction"),
-        ("attention_score_error", "Attention\nscore"),
+        ("attention_score_error", "Attention\nscore\nerror"),
     ]),
     ("Value cache", [
         ("value_reconstruction_error", "Value\nreconstruction"),

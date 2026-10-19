@@ -18,30 +18,6 @@ quantization_method_map = {
     'token': per_token_quantization
 }
 
-for key_quantization_method, value_quantization_method in [
-    ('channel', 'token'),
-    ('token', 'channel'),
-    ('channel', 'channel'),
-    ('token', 'token')
-]:
-    print(f"Simulating per {key_quantization_method} quantization for K and per {value_quantization_method} for V")
-
-    K_hat = quantization_method_map[key_quantization_method](K, bits=2, G=GROUP_SIZE, R=RESIDUAL_LENGTH)
-    V_hat = quantization_method_map[value_quantization_method](V, bits=2, G=GROUP_SIZE, R=RESIDUAL_LENGTH)
-
-    errors = compute_error_metrics(Q, K, V, K_hat, V_hat)
-    border = "+------------------------------+------------------+"
-    print(border)
-    print(f"| {'Metric':<28} | {'Error':>16} |")
-    print(border)
-    for name, error in errors.items():
-        label = name.replace('_', ' ').capitalize()
-        print(f"| {label:<28} | {error:>16.6f} |")
-    print(border)
-    print()
-
-# Quantize K and V with the same method so each run fills one column of KIVI
-# Table 2: key metrics depend only on K_hat, value metrics only on V_hat.
 errors_by_method = {}
 for method, quantization_method in quantization_method_map.items():
     K_hat = quantization_method(K, bits=2, G=GROUP_SIZE, R=RESIDUAL_LENGTH)
