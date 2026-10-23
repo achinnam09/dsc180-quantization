@@ -7,7 +7,7 @@ from visualize import plot_error_comparison, plot_magnitudes
 
 RESIDUAL_LENGTH = 128
 GROUP_SIZE = 32
-FIGURES_DIR = Path(__file__).resolve().parent.parent / "figures"
+FIGURES_DIR = Path(__file__).resolve().parents[2] / "figures"
 
 
 synth = Synthesizer()
