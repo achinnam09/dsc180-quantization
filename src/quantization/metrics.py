@@ -2,8 +2,8 @@ import numpy as np
 
 
 def relative_error(original, reconstructed, eps=1e-8):
-    denominator = np.maximum(np.abs(original), eps)
-    return float(np.linalg.norm((original - reconstructed) / denominator))
+    denominator = max(np.linalg.norm(original), eps)
+    return float(np.linalg.norm((original - reconstructed)) / denominator)
 
 
 def attention_weights(Q, K):

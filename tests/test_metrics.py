@@ -4,12 +4,12 @@ from quantization.metrics import attention_weights, compute_error_metrics, relat
 
 
 def test_relative_error():
-    # Entry errors are 3 and 4, giving a combined error of 5.
+    # Error norm is sqrt(6**2 + 16**2) and original norm is sqrt(2**2 + 4**2).
     original = np.array([[-2.0, 4.0]])
     reconstructed = np.array([[-8.0, 20.0]])
     error = relative_error(original, reconstructed)
 
-    np.testing.assert_allclose(error, 5)
+    np.testing.assert_allclose(error, np.sqrt(292 / 20))
 
 
 def test_relative_error_handles_zeros():
