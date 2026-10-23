@@ -1,6 +1,6 @@
 import numpy as np
 
-from quantize import dequantize, fake_quant, quantize
+from quantization.quantize import dequantize, fake_quant, quantize
 
 
 def test_quantize():

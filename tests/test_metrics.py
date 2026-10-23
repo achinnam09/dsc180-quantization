@@ -1,6 +1,6 @@
 import numpy as np
 
-from metrics import attention_weights, compute_error_metrics, relative_error
+from quantization.metrics import attention_weights, compute_error_metrics, relative_error
 
 
 def test_relative_error():

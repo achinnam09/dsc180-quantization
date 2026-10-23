@@ -1,6 +1,6 @@
 import numpy as np
 
-from visualize import plot_error_comparison, plot_magnitudes
+from quantization.visualize import plot_error_comparison, plot_magnitudes
 
 
 def test_plot_magnitudes_writes_file(tmp_path):

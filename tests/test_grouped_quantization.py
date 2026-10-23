@@ -1,6 +1,6 @@
 import numpy as np
 
-from quantize import per_channel_quantization, per_token_quantization
+from quantization.quantize import per_channel_quantization, per_token_quantization
 
 
 def test_per_channel_quantization():
