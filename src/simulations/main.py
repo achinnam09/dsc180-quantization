@@ -4,14 +4,18 @@ from metrics import compute_error_metrics
 from quantize import per_channel_quantization, per_token_quantization
 from synthesizer import Synthesizer
 from visualize import plot_error_comparison, plot_magnitudes
+import torch
 
 RESIDUAL_LENGTH = 128
 GROUP_SIZE = 32
 FIGURES_DIR = Path(__file__).resolve().parents[2] / "figures"
 
-
+data = torch.load(Path(__file__).resolve().parents[2] / "kv_snapshots" / "layer_3.pt")
 synth = Synthesizer()
-Q, K, V = synth.generate()
+#Q, K, V = synth.generate()
+Q = data["query"][0, 0, -1:].float().numpy() 
+K = data["keys"][0, 0].float().numpy()
+V = data["values"][0, 0].float().numpy() 
 
 quantization_method_map = {
     'channel': per_channel_quantization,

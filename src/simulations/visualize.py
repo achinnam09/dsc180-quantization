@@ -64,13 +64,12 @@ def plot_error_comparison(errors_by_method, path):
             ax.bar_label(bars, fmt="%.2f", padding=2, fontsize=8, color="#444444")
         ax.set_title(title)
         ax.set_xticks(x, [label for _, label in metrics])
-        ax.set_yscale("log")
         ax.grid(axis="y", color="#e5e5e5", linewidth=0.8)
         ax.set_axisbelow(True)
         for side in ("top", "right"):
             ax.spines[side].set_visible(False)
 
-    axes[0].set_ylabel("Relative error (log scale)")
+    axes[0].set_ylabel("Relative error")
     axes[-1].legend(frameon=False)
     fig.tight_layout()
     fig.savefig(path, dpi=150)
