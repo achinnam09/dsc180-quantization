@@ -8,3 +8,6 @@ __pycache__/
 
 # Test runner cache
 .pytest_cache/
+
+# Generated inference tensors
+kv_snapshots/
