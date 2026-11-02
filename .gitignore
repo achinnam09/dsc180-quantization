@@ -11,3 +11,6 @@ __pycache__/
 
 # Generated inference tensors
 kv_snapshots/
+
+# Local CodeGraph index
+.codegraph/
