@@ -8,6 +8,7 @@ import torch
 
 RESIDUAL_LENGTH = 128
 GROUP_SIZE = 32
+BITS = 2
 FIGURES_DIR = Path(__file__).resolve().parents[2] / "figures"
 
 data = torch.load(Path(__file__).resolve().parents[2] / "kv_snapshots" / "layer.pt")
@@ -35,8 +36,8 @@ for method, quantization_method in quantization_method_map.items():
         for h in range(K[lay].shape[1]):
             K_head = K[lay][0, h].float().numpy()
             V_head = V[lay][0, h].float().numpy()
-            K_hat = quantization_method(K_head, bits=2, G=GROUP_SIZE, R=RESIDUAL_LENGTH)
-            V_hat = quantization_method(V_head, bits=2, G=GROUP_SIZE, R=RESIDUAL_LENGTH)
+            K_hat = quantization_method(K_head, bits=BITS, G=GROUP_SIZE, R=RESIDUAL_LENGTH)
+            V_hat = quantization_method(V_head, bits=BITS, G=GROUP_SIZE, R=RESIDUAL_LENGTH)
             for q in range(h * group, (h + 1) * group):
                 Q_head = Q[lay][0, q, -1:].float().numpy()
                 errors = compute_error_metrics(Q_head, K_head, V_head, K_hat, V_hat)
