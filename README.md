@@ -1,10 +1,10 @@
 # dsc180-quantization
 
-Experiments on **low-bit KV-cache quantization** for large language models, done for UCSD DSC 180.
+Experiments on **low-bit KV-cache quantization** for large language models, done for UCSD DSC-180A.
 
-The project tests the main claim behind [KIVI](https://arxiv.org/abs/2402.02750), using both synthetic data and a real model:
+The project tests the main claim behind the quantization method [KIVI](https://arxiv.org/abs/2402.02750), using both synthetic data and a real model:
 
-> The **key** cache should be quantized **per channel**. The **value** cache should be quantized **per token**.
+> Kivi differs from the norm because the **key** cache should be quantized **per channel**. The **value** cache should be quantized **per token**.
 
 We take real query/key/value tensors from **Qwen3-1.7B** running on a **LongBench** prompt, quantize them to 2 bits each way, and measure how much error each method adds to the attention computation.
 
@@ -12,11 +12,11 @@ We take real query/key/value tensors from **Qwen3-1.7B** running on a **LongBenc
 
 ## Background
 
-During autoregressive decoding, a transformer stores the keys (K) and values (V) of all previous tokens so it doesn't have to compute them again. For long contexts this **KV cache** often uses more memory than the model weights. Quantizing it to 2 bits cuts that memory by about 8× compared with fp16. The question is how to do that without hurting attention much.
+During autoregressive decoding, a transformer stores the keys (K) and values (V) of all previous tokens so it doesn't have to compute them again. For long contexts this **KV cache** often uses more memory than the model weights. Quantizing it to 2 bits cuts that memory by about 8× compared with fp16. The issue with quantization is how to do that without hurting attention much.
 
 KIVI's observation:
 
-- **Keys** have a few **outlier channels**: certain dimensions are much larger than the rest across *every* token. If you quantize per token (one scale per row), those outliers inflate the scale and wipe out the precision of the other channels. Giving each channel its own scale avoids this.
+- **Keys** have a few **outlier channels**: certain dimensions are much larger than the rest across *every* token. If you quantize per token (one scale per row), those outliers inflate the scale and wipe out the precision of the other channels. Giving each channel its own scale by quantizing per key avoids this.
 - **Values** have no consistent channel outliers. Their error matters through the attention output `A @ V`, which mixes tokens together, so quantizing **per token** keeps each token's error contained.
 - The most recent **R tokens** (the *residual*) stay in full precision, because they are still being filled into groups and they usually get a lot of attention.
 
@@ -78,7 +78,7 @@ Key metrics depend only on how K is quantized, and value metrics only on how V i
 1. **`pull_cache.py`** loads `Qwen/Qwen3-1.7B` with a custom attention hook that records the query tensor in each layer. It then runs one forward pass on a LongBench `multifieldqa_en` sample (middle-truncated to 4096 tokens, the same way LongBench's own evaluation truncates) and saves Q, K and V for every layer to `kv_snapshots/layer.pt`.
 2. **`main.py`** loads that snapshot. For every layer and every KV head, it quantizes K and V with both methods. Qwen3 uses grouped-query attention, so it then scores each quantized head against each query head that shares it, using the last token's query (the next decoding step). It prints the mean, median and worst-case error per method, plus a per-layer breakdown. Per-head results go to `results/head_errors.csv` and figures to `figures/`.
 
-You can also run synthetic experiments: `Synthesizer` makes random K with a few channels scaled by 10× (channel outliers) and V with randomly scattered 10× entries. To use it, swap it in at the top of `main.py`.
+We also checked to see if this relationship held up with synthetic experiments: `Synthesizer` makes random K with a few channels scaled by 10× (channel outliers) and V with randomly scattered 10× entries. To use it, swap it in at the top of `main.py`.
 
 ## Getting started
 
