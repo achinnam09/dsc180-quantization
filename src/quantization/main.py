@@ -1,4 +1,7 @@
+import csv
 from pathlib import Path
+
+import numpy as np
 
 from metrics import compute_error_metrics
 from quantize import per_channel_quantization, per_token_quantization
@@ -27,12 +30,10 @@ quantization_method_map = {
     'token': per_token_quantization
 }
 
-avg_errors = {}
+records = []
 for method, quantization_method in quantization_method_map.items():
-    count = 0
-    totals = {}
     for lay in range(len(K)):
-        group = Q[lay].shape[1] // K[lay].shape[1]                
+        group = Q[lay].shape[1] // K[lay].shape[1]
         for h in range(K[lay].shape[1]):
             K_head = K[lay][0, h].float().numpy()
             V_head = V[lay][0, h].float().numpy()
@@ -41,14 +42,33 @@ for method, quantization_method in quantization_method_map.items():
             for q in range(h * group, (h + 1) * group):
                 Q_head = Q[lay][0, q, -1:].float().numpy()
                 errors = compute_error_metrics(Q_head, K_head, V_head, K_hat, V_hat)
-                for name, value in errors.items():
-                    totals[name] = totals.get(name, 0) + value
-                count += 1
-    avg_errors[method] = {name: total / count for name, total in totals.items()}
+                records.append({"method": method, "layer": lay, "kv_head": h, "query_head": q, **errors})
 
-print(f"Average error over {count} query heads:")
-for method, errors in avg_errors.items():
-    print(f"  {method}: " + ", ".join(f"{name} {value:.3f}" for name, value in errors.items()))
+metric_names = list(errors)
+avg_errors = {}
+for method in quantization_method_map:
+    rows = [r for r in records if r["method"] == method]
+    avg_errors[method] = {name: float(np.mean([r[name] for r in rows])) for name in metric_names}
+
+    print(f"{method} ({len(rows)} query heads):")
+    for name in metric_names:
+        values = np.array([r[name] for r in rows])
+        worst = rows[int(values.argmax())]
+        print(f"  {name:<28} mean {values.mean():.3f}  median {np.median(values):.3f}  "
+              f"max {values.max():.3f} (layer {worst['layer']}, head {worst['query_head']})")
+
+    print("  attention_output_error by layer (mean):")
+    for lay in range(len(K)):
+        layer_values = [r["attention_output_error"] for r in rows if r["layer"] == lay]
+        print(f"    layer {lay:>2}: {np.mean(layer_values):.3f}")
+
+RESULTS_PATH = Path(__file__).resolve().parents[2] / "results" / "head_errors.csv"
+RESULTS_PATH.parent.mkdir(exist_ok=True)
+with open(RESULTS_PATH, "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=records[0].keys())
+    writer.writeheader()
+    writer.writerows(records)
+print(f"Saved per-head errors to {RESULTS_PATH}")
 
 FIGURES_DIR.mkdir(exist_ok=True)
 plot_magnitudes(K[0][0, 0].float().numpy(), V[0][0, 0].float().numpy(), FIGURES_DIR / "kv_magnitudes.png")
