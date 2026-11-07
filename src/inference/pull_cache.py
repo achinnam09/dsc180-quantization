@@ -2,6 +2,9 @@ from transformers import AttentionInterface, AutoModelForCausalLM, AutoTokenizer
 from transformers.integrations.sdpa_attention import sdpa_attention_forward
 from pathlib import Path
 import torch
+import json
+import zipfile
+from huggingface_hub import hf_hub_download
 
 
 QKVs = {"query": [], "keys": [], "values": []}
@@ -15,6 +18,20 @@ def capture_attention(module, query, key, value, attention_mask, **kwargs):
 
 AttentionInterface.register("capture", capture_attention)
 
+LONGBENCH_TASK = "multifieldqa_en"   # any task name from the dataset card
+SAMPLE_INDEX = 0
+MAX_CONTEXT_TOKENS = 4096            # keeps the saved Q/K/V tensors a manageable size
+
+
+def load_longbench(task):
+    zip_path = hf_hub_download(
+        repo_id="zai-org/LongBench", filename="data.zip", repo_type="dataset"
+    )
+    with zipfile.ZipFile(zip_path) as z:
+        member = next(n for n in z.namelist() if n.endswith(f"{task}.jsonl"))
+        with z.open(member) as f:
+            return [json.loads(line) for line in f]
+
 model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-1.7B", dtype="auto", device_map="auto", attn_implementation="capture")
 tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-1.7B")
 
@@ -23,6 +40,7 @@ assert tokenizer
 
 # Long enough (well over the residual length of 128 tokens) that the
 # quantizers have full groups of tokens to work on.
+# Replacing long_text for the longbench model
 long_text = """
 For most of history, people who wanted to know where they were relied on the sky. Sailors crossing open water
 watched the height of the sun at noon and the angle of familiar stars at night, and from those two observations
@@ -67,9 +85,24 @@ routes became safer and shorter, and scientific expeditions could record exactly
 made. A problem that had cost countless lives was solved not by a single discovery but by steady refinement of
 instruments, tables, and techniques, each one reducing error a little further than the last.
 """
-
+'''
 chat = [
   {"role": "user", "content": f"Summarize the following passage in a few sentences:\n\n{long_text}"},
+]
+'''
+
+sample = load_longbench(LONGBENCH_TASK)[SAMPLE_INDEX]
+
+# Truncate the context from the middle (keep both ends), the same convention
+# LongBench's own evaluation uses, so the question at the end is never cut off.
+ids = tokenizer(sample["context"], add_special_tokens=False)["input_ids"]
+if len(ids) > MAX_CONTEXT_TOKENS:
+    half = MAX_CONTEXT_TOKENS // 2
+    ids = ids[:half] + ids[-half:]
+context = tokenizer.decode(ids)
+
+chat = [
+    {"role": "user", "content": f"{context}\n\nQuestion: {sample['input']}\nAnswer briefly."},
 ]
 
 inputs = tokenizer.apply_chat_template(chat, tokenize=True, add_generation_prompt=True, return_tensors="pt", return_dict=True)
