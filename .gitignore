@@ -14,3 +14,7 @@ kv_snapshots/
 
 # Local CodeGraph index
 .codegraph/
+
+# head errors
+results/head_errors.csv
+
