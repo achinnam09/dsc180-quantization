@@ -105,7 +105,8 @@ chat = [
     {"role": "user", "content": f"{context}\n\nQuestion: {sample['input']}\nAnswer briefly."},
 ]
 
-inputs = tokenizer.apply_chat_template(chat, tokenize=True, add_generation_prompt=True, return_tensors="pt", return_dict=True)
+# Thinking mode off: we want the answer directly, the same prompt format used for generation.
+inputs = tokenizer.apply_chat_template(chat, tokenize=True, add_generation_prompt=True, enable_thinking=False, return_tensors="pt", return_dict=True)
 assert isinstance(inputs, BatchEncoding)
 inputs.to(model.device)
 print("prompt tokens:", inputs["input_ids"].shape[1])
