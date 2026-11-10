@@ -17,9 +17,15 @@ def compute_error_metrics(Q, K, V, K_hat, V_hat):
     A = attention_weights(Q, K)
     A_hat = attention_weights(Q, K_hat)
 
+    O = A @ V
     return {
+        # Key cache only: V is left exact.
         "key_reconstruction_error": relative_error(K, K_hat),
         "attention_score_error": relative_error(A, A_hat),
+        "key_output_error": relative_error(O, A_hat @ V),
+        # Value cache only: the attention weights are left exact.
         "value_reconstruction_error": relative_error(V, V_hat),
-        "attention_output_error": relative_error(A @ V, A @ V_hat),
+        "attention_output_error": relative_error(O, A @ V_hat),
+        # Both caches quantized together, which is what happens in practice.
+        "combined_output_error": relative_error(O, A_hat @ V_hat),
     }

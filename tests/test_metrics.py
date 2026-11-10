@@ -39,3 +39,31 @@ def test_unchanged_matrices_have_zero_error():
     errors = compute_error_metrics(Q, K, V, K, V)
 
     assert all(error == 0 for error in errors.values())
+
+
+def test_key_only_quantization_isolates_key_metrics():
+    rng = np.random.default_rng(0)
+    Q, K, V = rng.normal(size=(1, 4)), rng.normal(size=(6, 4)), rng.normal(size=(6, 4))
+    K_hat = K + 0.5 * rng.normal(size=K.shape)
+
+    errors = compute_error_metrics(Q, K, V, K_hat, V)
+
+    # V is exact, so the value-only metrics are zero, and quantizing "both"
+    # caches is the same as quantizing only K.
+    assert errors["value_reconstruction_error"] == 0
+    assert errors["attention_output_error"] == 0
+    assert errors["key_output_error"] > 0
+    np.testing.assert_allclose(errors["combined_output_error"], errors["key_output_error"])
+
+
+def test_value_only_quantization_isolates_value_metrics():
+    rng = np.random.default_rng(1)
+    Q, K, V = rng.normal(size=(1, 4)), rng.normal(size=(6, 4)), rng.normal(size=(6, 4))
+    V_hat = V + 0.5 * rng.normal(size=V.shape)
+
+    errors = compute_error_metrics(Q, K, V, K, V_hat)
+
+    assert errors["attention_score_error"] == 0
+    assert errors["key_output_error"] == 0
+    assert errors["attention_output_error"] > 0
+    np.testing.assert_allclose(errors["combined_output_error"], errors["attention_output_error"])
