@@ -186,9 +186,9 @@ def main():
         handler.setFormatter(formatter)
         log.addHandler(handler)
     log.setLevel(logging.INFO)
-    (out_dir / "args.json").write_text(json.dumps(vars(args), indent=2))
-
     if not args.score_only:
+        # Record the settings of the generation run (not overwritten by --score-only).
+        (out_dir / "args.json").write_text(json.dumps(vars(args), indent=2))
         run(args, out_dir)
     score(out_dir, args.configs, args.tasks)
 
