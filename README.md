@@ -105,6 +105,51 @@ The first step needs enough memory to run a 1.7B model on a long prompt. A GPU o
 - `pull_cache.py`: model name
 - `main.py`: `BITS`, `GROUP_SIZE`, `RESIDUAL_LENGTH`
 
+## One-prompt generation with a packed KIVI cache
+
+The offline tensor experiment above remains available. To compare actual answers,
+`src/inference/compare_longbench.py` runs the same complete LongBench QA prompt
+with an ordinary cache and the packed cache in `src/inference/packed_kivi_cache.py`.
+Both use Qwen3-1.7B, native bfloat16 model computation, greedy decoding, and thinking
+mode disabled. No model weights are quantized.
+
+```bash
+PYTHONPATH=src uv run python -m inference.compare_longbench
+# Optional: choose a particular example and write to a new output directory.
+PYTHONPATH=src uv run python -m inference.compare_longbench \
+  --task multifieldqa_en --sample-index 0 \
+  --output-dir kv_snapshots/my_kivi_run
+```
+
+By default, the runner selects the first complete example whose formatted
+prompt contains 129–4096 tokens. It does not truncate the document or choose
+examples based on their answers. Each new output directory contains the exact
+prompt and settings, both answers, reference answers, English QA F1 scores,
+cache sizes, and a decode trace. Existing output directories are rejected so
+previous results cannot be overwritten. Supported tasks are `multifieldqa_en`
+and `qasper`; both use LongBench's normalized token-overlap QA F1 definition.
+
+The cache keeps older keys in per-channel groups and older values in per-token
+groups, packing four 2-bit codes into each byte. Scales and minimum values are
+stored alongside the codes. Recent keys and values stay in full precision.
+During prefill, ordinary attention processes the prompt and the cache prepares
+its compressed history for later steps. During decode, each new token is added;
+completed key blocks and old value rows are then packed for the next step.
+Qwen applies RoPE to Q/K before the cache receives K. Values are not rotated.
+
+This implementation supports one unpadded prompt followed by single-token
+greedy decoding. It temporarily unpacks each layer's cache to floating point
+for standard attention. Stored-cache byte counts include scales and residuals,
+but exclude model weights, temporary tensors, and allocator overhead. These
+counts are not peak device-memory or speed benchmarks. Beam search, batched
+requests, chunked prefill, and the paper's fused GPU kernels are outside this
+implementation.
+
+Tests check known packed bytes, quantization against the original NumPy
+quantizers, residual boundary updates, token order, released residual storage,
+and a tiny Qwen model with shared KV heads. Disabling quantization reproduces
+ordinary cached and uncached attention across prefill and decode.
+
 ## References
 
 - Liu et al., *KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache*, ICML 2024. [arXiv:2402.02750](https://arxiv.org/abs/2402.02750)
