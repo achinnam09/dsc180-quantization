@@ -75,7 +75,7 @@ Key metrics depend only on how K is quantized, and value metrics only on how V i
 
 ### Real-model pipeline
 
-1. **`pull_cache.py`** loads `Qwen/Qwen3-1.7B` with a custom attention hook that records the query tensor in each layer. It then runs one forward pass on a LongBench `multifieldqa_en` sample (middle-truncated to 4096 tokens, the same way LongBench's own evaluation truncates) and saves Q, K and V for every layer to `kv_snapshots/layer.pt`.
+1. **`pull_cache.py`** loads `Qwen/Qwen3-1.7B` with a custom attention hook that records the query tensor in each layer. It then runs one forward pass on a LongBench `multifieldqa_en` sample and saves Q, K and V for every layer to `kv_snapshots/layer.pt`.
 2. **`main.py`** loads that snapshot. For every layer and every KV head, it quantizes K and V with both methods. Qwen3 uses grouped-query attention, so it then scores each quantized head against each query head that shares it, using the last token's query (the next decoding step). It prints the mean, median and worst-case error per method, plus a per-layer breakdown. Per-head results go to `results/head_errors.csv` and figures to `figures/`.
 
 We also checked to see if this relationship held up with synthetic experiments: `Synthesizer` makes random K with a few channels scaled by 10× (channel outliers) and V with randomly scattered 10× entries. To use it, swap it in at the top of `main.py`.
@@ -97,11 +97,12 @@ uv run python src/quantization/main.py
 uv run pytest
 ```
 
-The first step needs enough memory to run a 1.7B model on a 4K-token prompt. A GPU or Apple Silicon (MPS) is recommended, but it will run on CPU.
+The first step needs enough memory to run a 1.7B model on a long prompt. A GPU or Apple Silicon (MPS) is recommended, but it will run on CPU.
 
 ### Configuration
 
-- `pull_cache.py`: `LONGBENCH_TASK`, `SAMPLE_INDEX`, `MAX_CONTEXT_TOKENS`, model name
+- `longbench.py`: `LONGBENCH_TASK`, `SAMPLE_INDEX`
+- `pull_cache.py`: model name
 - `main.py`: `BITS`, `GROUP_SIZE`, `RESIDUAL_LENGTH`
 
 ## References
